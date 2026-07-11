@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rateshield-postgres
+    environment:
+      POSTGRES_DB: rateshield
+      POSTGRES_USER: ${DB_USERNAME:-rateshield}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-rateshield}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rateshield -d rateshield"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rateshield:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rateshield-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Datasource (Spring relaxed binding: SPRING_DATASOURCE_URL -> spring.datasource.url)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rateshield
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-rateshield}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-rateshield}
+      # App security (required, no defaults in production config)
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      OPS_USERNAME: ${OPS_USERNAME:-ops}
+      OPS_PASSWORD: ${OPS_PASSWORD:-ops123}
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

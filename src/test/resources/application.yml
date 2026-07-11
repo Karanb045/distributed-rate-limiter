@@ -1,0 +1,36 @@
+# Test-only overrides (NOT packaged in the production jar).
+# Self-contained datasource config so integration tests boot against the local
+# PostgreSQL instance without relying on environment variables or the main
+# application.yml datasource defaults. The prod artifact's application.yml has
+# no defaults and requires real environment-provided values.
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rateshield
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  security:
+    admin:
+      username: admin
+      password: admin123
+    ops:
+      username: ops
+      password: ops123

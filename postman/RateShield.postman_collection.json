@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "RateShield API",
+    "description": "RateShield distributed token rate limiter. Credentials default to the Docker setup: admin/admin123 (ADMIN) and ops/ops123 (OPS). Edit the collection variables to point at a different host or credentials.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "adminUser", "value": "admin" },
+    { "key": "adminPass", "value": "admin123" },
+    { "key": "opsUser", "value": "ops" },
+    { "key": "opsPass", "value": "ops123" },
+    { "key": "clientKey", "value": "demo" }
+  ],
+  "item": [
+    {
+      "name": "Client Configuration",
+      "description": "ADMIN-only endpoints for managing rate limit client configs.",
+      "auth": {
+        "type": "basic",
+        "basic": [
+          { "key": "username", "value": "{{adminUser}}" },
+          { "key": "password", "value": "{{adminPass}}" }
+        ]
+      },
+      "item": [
+        {
+          "name": "Create client",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/clients", "host": ["{{baseUrl}}"], "path": ["api", "v1", "clients"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientKey\": \"{{clientKey}}\",\n  \"algorithm\": \"TOKEN_BUCKET\",\n  \"requestsPerSecond\": 1,\n  \"burstCapacity\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "List clients",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/clients", "host": ["{{baseUrl}}"], "path": ["api", "v1", "clients"] }
+          }
+        },
+        {
+          "name": "Get client",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/clients/{{clientKey}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "clients", "{{clientKey}}"] }
+          }
+        },
+        {
+          "name": "Update client",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/clients/{{clientKey}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "clients", "{{clientKey}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientKey\": \"{{clientKey}}\",\n  \"algorithm\": \"SLIDING_WINDOW\",\n  \"requestsPerSecond\": 5,\n  \"burstCapacity\": 10\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Delete client",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/v1/clients/{{clientKey}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "clients", "{{clientKey}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rate Limit",
+      "description": "Public endpoint - no auth required.",
+      "item": [
+        {
+          "name": "Check rate limit",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/rate-limit/check", "host": ["{{baseUrl}}"], "path": ["api", "v1", "rate-limit", "check"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"clientKey\": \"{{clientKey}}\" }",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Observability",
+      "description": "Health and info are public; Prometheus metrics require the OPS role.",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator", "health"] }
+          }
+        },
+        {
+          "name": "Info",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/actuator/info", "host": ["{{baseUrl}}"], "path": ["actuator", "info"] }
+          }
+        },
+        {
+          "name": "Prometheus metrics",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{opsUser}}" },
+                { "key": "password", "value": "{{opsPass}}" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/actuator/prometheus", "host": ["{{baseUrl}}"], "path": ["actuator", "prometheus"] }
+          }
+        }
+      ]
+    }
+  ]
+}
